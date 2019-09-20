@@ -39,7 +39,7 @@ install() {
   /opt/etc/init.d/S02haveged start
 
   echo -e "$ansi_green Cloning shadowsocks-asuswrt-merlin... $ansi_std"
-  git clone --depth=1 https://github.com/Acris/shadowsocks-asuswrt-merlin.git "$SS_MERLIN_HOME" || {
+  git clone --depth=1 https://github.com/Tlaster/shadowsocks-asuswrt-merlin.git "$SS_MERLIN_HOME" || {
     echo -e "$ansi_red Error: git clone of shadowsocks-asuswrt-merlin repo failed. $ansi_std"
     exit 1
   }
@@ -72,7 +72,6 @@ install() {
 
   echo -e "$ansi_green Creating automatic upgrade cron jobs... $ansi_std"
   cru a upgrade-ss-merlin "20 6 * * *" "$SS_MERLIN_HOME/tools/upgrade.sh"
-  cru a statistics "45 6 * * *" "$SS_MERLIN_HOME/tools/statistics.sh"
 
   echo -e "$ansi_green"
   echo "   ______           __                        __       "
@@ -84,7 +83,7 @@ install() {
   echo -e "$ansi_yellow Copy and edit your shadowsocks configuration file at: /opt/share/ss-merlin/etc/shadowsocks/config.sample.json $ansi_std"
   echo -e "$ansi_yellow and shadowsocks-asuswrt-merlin configuration file at: /opt/share/ss-merlin/etc/ss-merlin.sample.conf $ansi_std"
   echo "Type ss-merlin to get all supported arguments."
-  echo "Get more details and give us a feedback at https://github.com/Acris/shadowsocks-asuswrt-merlin."
+  echo "Get more details and give us a feedback at https://github.com/Tlaster/shadowsocks-asuswrt-merlin."
 }
 
 install

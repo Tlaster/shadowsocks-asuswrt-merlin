@@ -24,6 +24,12 @@ if [[ ${mode} -eq 0 ]]; then
       cp ${DNSMASQ_CONFIG_DIR}/dnsmasq_gfwlist_ipset.conf.bak ${DNSMASQ_CONFIG_DIR}/dnsmasq_gfwlist_ipset.conf
     fi
   fi
+  # Add user_ip_proxylist.txt
+  if [[ -e ${SS_MERLIN_HOME}/rules/user_ip_proxylist.txt ]]; then
+    for ip in $(cat ${SS_MERLIN_HOME}/rules/user_ip_proxylist.txt | grep -v '^#'); do
+      ipset add gfwlist ${ip}
+    done
+  fi
 elif [[ ${mode} -eq 1 ]]; then
   # Add China IP to chinaips ipset for Bypass mainland China mode
   if ipset create chinaips hash:net 2>/dev/null; then
