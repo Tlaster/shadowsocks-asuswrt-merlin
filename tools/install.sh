@@ -57,16 +57,12 @@ install() {
   ${SS_MERLIN_HOME}/scripts/update_gfwlist.sh
 
   echo -d "Installing shadowsocks..."
-  if opkg find shadowsocks-libev |grep -qs -e '.*'; then
-      opkg install shadowsocks-libev
-  elif opkg find shadowsocks-libev-ss-redir |grep -qs -e '.*'; then
+  if opkg find shadowsocks-libev-ss-redir |grep -qs -e '.*'; then
       opkg install shadowsocks-libev-config shadowsocks-libev-ss-redir
   fi
 
   echo -e "$ansi_green Creating system links... $ansi_std"
   ln -sf ${SS_MERLIN_HOME}/bin/ss-merlin /opt/bin/ss-merlin
-  # ln -sf ${SS_MERLIN_HOME}/bin/ss-redir /opt/bin/ss-redir
-  # ln -sf ${SS_MERLIN_HOME}/bin/v2ray-plugin /opt/bin/v2ray-plugin
 
   echo -e "$ansi_green Creating dnsmasq config file... $ansi_std"
   if [[ ! -f /jffs/configs/dnsmasq.conf.add ]]; then
