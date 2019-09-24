@@ -33,9 +33,7 @@ uninstall() {
 
   echo -e "$ansi_green Deleting system links... $ansi_std"
   rm -f /opt/bin/ss-merlin
-  # rm -f /opt/bin/ss-redir
-  # rm -f /opt/bin/v2ray-plugin
-
+  
   echo -e "$ansi_green Cleaning dnsmasq configuration file... $ansi_std"
   sed -i "\#conf-dir=${SS_MERLIN_HOME}/etc/dnsmasq.d/,\*\.conf#d" /jffs/configs/dnsmasq.conf.add 2>/dev/null
   service restart_dnsmasq

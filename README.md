@@ -1,3 +1,6 @@
+# NOTE:
+**I've found that there are some [data tracing](https://github.com/Acris/shadowsocks-asuswrt-merlin/search?q=iloli.li&unscoped_q=iloli.li) and [untrusted binary](https://github.com/Acris/shadowsocks-asuswrt-merlin/blob/master/bin/ss-redir) issue from [the original repo](https://github.com/Acris/shadowsocks-asuswrt-merlin). If you care about that (like me), you can use this fork instead, I've removed the data tracing and install `shadowsocks-libev-ss-redir` from opkg.**
+
 # Shadowsocks for Asuswrt-Merlin New Gen
 
 shadowsocks-asuswrt-merlin will install `shadowsocks-libev` and `v2ray-plugin` on your Asuswrt-Merlin New Gen(version 382.xx and higher) based router, tested on NETGEAR R7000 and ASUS RT-AC86U. The binary of shadowocks-libev is build on Linux environment with https://gist.github.com/Tlaster/60abe3f1a17567a7986000745fbe2742.
@@ -121,7 +124,7 @@ Thanks for the following awesome projects ❤️
 ```
 The MIT License (MIT)
 
-Copyright (c) 2016 Billy Zheng
+Copyright (c) 2019 Tlaster
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
