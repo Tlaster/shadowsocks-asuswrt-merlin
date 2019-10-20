@@ -35,7 +35,7 @@ install() {
   echo -e "$ansi_green Installing required packages... $ansi_std"
   opkg update
   opkg upgrade
-  opkg install haveged unbound-daemon ipset iptables
+  opkg install haveged unbound-daemon ipset iptables shadowsocks-libev-ss-redir shadowsocks-libev-config
   /opt/etc/init.d/S02haveged start
 
   echo -e "$ansi_green Cloning shadowsocks-asuswrt-merlin... $ansi_std"
@@ -49,17 +49,23 @@ install() {
   chmod +x ${SS_MERLIN_HOME}/scripts/*.sh
   chmod +x ${SS_MERLIN_HOME}/tools/*.sh
 
+  echo -e "$ansi_green Enabling swap... $ansi_std"
+  ${SS_MERLIN_HOME}/scripts/enable_swap.sh
+  if [[ ! -f /jffs/scripts/post-mount ]]; then
+    echo "#!/bin/sh" >/jffs/scripts/post-mount
+    chmod +x /jffs/scripts/post-mount
+  fi
+  if ! grep -qs "^${SS_MERLIN_HOME}/scripts/enable_swap.sh$" /jffs/scripts/post-mount; then
+    echo "${SS_MERLIN_HOME}/scripts/enable_swap.sh" >>/jffs/scripts/post-mount
+  fi
+
+
   echo -e "$ansi_green Updating IP and DNS whitelists... $ansi_std"
   ${SS_MERLIN_HOME}/scripts/update_ip_whitelist.sh
   ${SS_MERLIN_HOME}/scripts/update_dns_whitelist.sh
 
   echo -e "$ansi_green Updating GFW list... $ansi_std"
   ${SS_MERLIN_HOME}/scripts/update_gfwlist.sh
-
-  echo -d "Installing shadowsocks..."
-  if opkg find shadowsocks-libev-ss-redir |grep -qs -e '.*'; then
-      opkg install shadowsocks-libev-config shadowsocks-libev-ss-redir
-  fi
 
   echo -e "$ansi_green Creating system links... $ansi_std"
   ln -sf ${SS_MERLIN_HOME}/bin/ss-merlin /opt/bin/ss-merlin
