@@ -1,9 +1,7 @@
-#!/bin/sh
+#!/bin/ash
 
 uninstall() {
-  ansi_red="\033[1;31m"
   ansi_green="\033[1;32m"
-  ansi_yellow="\033[1;33m"
   ansi_std="\033[m"
 
   SS_MERLIN_HOME=/opt/share/ss-merlin
@@ -29,7 +27,7 @@ uninstall() {
   ${SS_MERLIN_HOME}/scripts/clean_iptables_rule.sh
 
   echo -e "$ansi_green Removing packages... $ansi_std"
-  opkg remove --autoremove unbound-daemon haveged
+  opkg remove --autoremove shadowsocks-libev-ss-redir unbound-daemon haveged
 
   echo -e "$ansi_green Deleting system links... $ansi_std"
   rm -f /opt/bin/ss-merlin

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ash
 
 SS_MERLIN_HOME=/opt/share/ss-merlin
 DNSMASQ_CONFIG_DIR=${SS_MERLIN_HOME}/etc/dnsmasq.d
@@ -11,10 +11,25 @@ if [[ ! -f ${SS_MERLIN_HOME}/etc/shadowsocks/config.json ]]; then
 fi
 . ${SS_MERLIN_HOME}/etc/ss-merlin.conf
 
+get_lan_ips() {
+  lan_ipaddr=$(nvram get lan_ipaddr)
+  lan_netmask=$(nvram get lan_netmask)
+  # Assumes there's no "255." after a non-255 byte in the mask
+  local x=${lan_netmask##*255.}
+  set -- 0^^^128^192^224^240^248^252^254^ $(( (${#lan_netmask} - ${#x})*2 )) "${x%%.*}"
+  x=${1%%$3*}
+  cidr=$(($2 + (${#x}/4)))
+  echo "${lan_ipaddr%.*}".0/$cidr
+}
+
 modprobe ip_set
 modprobe ip_set_hash_net
 modprobe ip_set_hash_ip
 modprobe xt_set
+
+# Create ipset for user domain name whitelist and user domain name gfwlist
+ipset create userwhitelist hash:net 2>/dev/null
+ipset create usergfwlist hash:net 2>/dev/null
 
 if [[ ${mode} -eq 0 ]]; then
   # Add GFW list to gfwlist ipset for GFW list mode
@@ -51,10 +66,6 @@ elif [[ ${mode} -eq 1 ]]; then
   fi
 fi
 
-# Create ipset for user domain name whitelist and user domain name gfwlist
-ipset create userwhitelist hash:ip 2>/dev/null
-ipset create usergfwlist hash:ip 2>/dev/null
-
 # Add intranet IP to localips ipset for Bypass LAN
 if ipset create localips hash:net 2>/dev/null; then
   OLDIFS="$IFS" && IFS=$'\n'
@@ -90,22 +101,31 @@ if ipset create whitelist hash:ip 2>/dev/null; then
     # Add rubyfush DNS server
     ipset add whitelist 118.89.110.78
     ipset add whitelist 47.96.179.163
-
-    # Add user_ip_whitelist.txt
-    if [[ -e ${SS_MERLIN_HOME}/rules/user_ip_whitelist.txt ]]; then
-      for ip in $(cat ${SS_MERLIN_HOME}/rules/user_ip_whitelist.txt | grep -v '^#'); do
-        ipset add whitelist ${ip}
-      done
-    fi
   fi
   IFS=${OLDIFS}
 fi
 
+# Add user_ip_whitelist.txt
+if [[ -e ${SS_MERLIN_HOME}/rules/user_ip_whitelist.txt ]]; then
+  for ip in $(cat ${SS_MERLIN_HOME}/rules/user_ip_whitelist.txt | grep -v '^#'); do
+    ipset add userwhitelist ${ip}
+  done
+fi
+
+# Add user_ip_gfwlist.txt
+if [[ -e ${SS_MERLIN_HOME}/rules/user_ip_gfwlist.txt ]]; then
+  for ip in $(cat ${SS_MERLIN_HOME}/rules/user_ip_gfwlist.txt | grep -v '^#'); do
+    ipset add usergfwlist ${ip}
+  done
+fi
+
 local_redir_port=$(cat ${SS_MERLIN_HOME}/etc/shadowsocks/config.json | grep 'local_port' | cut -d ':' -f 2 | grep -o '[0-9]*')
 
-if [[ ! ${lan_ips} ]]; then
-  lan_ips=0.0.0.0/0
+if [[ ! ${lan_ips} || ${lan_ips} == '0.0.0.0/0' ]]; then
+  lan_ips=$(get_lan_ips)
 fi
+echo "LAN IPs are ${lan_ips}"
+
 if iptables -t nat -N SHADOWSOCKS_TCP 2>/dev/null; then
   # TCP rules
   iptables -t nat -N SS_OUTPUT
@@ -126,7 +146,7 @@ if iptables -t nat -N SHADOWSOCKS_TCP 2>/dev/null; then
   iptables -t nat -A SHADOWSOCKS_TCP -p tcp -s ${lan_ips} -m set --match-set usergfwlist dst -j REDIRECT --to-ports ${local_redir_port}
   # Apply TCP rules
   iptables -t nat -A SS_OUTPUT -p tcp -j SHADOWSOCKS_TCP
-  iptables -t nat -A SS_PREROUTING -p tcp -s 192.168.0.0/16 -j SHADOWSOCKS_TCP
+  iptables -t nat -A SS_PREROUTING -p tcp -s ${lan_ips} -j SHADOWSOCKS_TCP
 fi
 
 if [[ ${udp} -eq 1 ]]; then
@@ -153,9 +173,9 @@ if [[ ${udp} -eq 1 ]]; then
     iptables -t mangle -A SHADOWSOCKS_UDP -p udp -s ${lan_ips} -m set --match-set usergfwlist dst -j MARK --set-mark 0x2333
     # Apply for udp
     iptables -t mangle -A SS_OUTPUT -p udp -j SHADOWSOCKS_UDP
-    iptables -t mangle -A SS_PREROUTING -p udp -s 192.168.0.0/16 --dport 53 -m mark ! --mark 0x2333 -j ACCEPT
-    iptables -t mangle -A SS_PREROUTING -p udp -s 192.168.0.0/16 -m mark ! --mark 0x2333 -j SHADOWSOCKS_UDP
-    iptables -t mangle -A SS_PREROUTING -p udp -s 192.168.0.0/16 -m mark --mark 0x2333 -j TPROXY --on-ip 127.0.0.1 --on-port ${local_redir_port}
+    iptables -t mangle -A SS_PREROUTING -p udp -s ${lan_ips} --dport 53 -m mark ! --mark 0x2333 -j ACCEPT
+    iptables -t mangle -A SS_PREROUTING -p udp -s ${lan_ips} -m mark ! --mark 0x2333 -j SHADOWSOCKS_UDP
+    iptables -t mangle -A SS_PREROUTING -p udp -s ${lan_ips} -m mark --mark 0x2333 -j TPROXY --on-ip 127.0.0.1 --on-port ${local_redir_port}
   fi
 fi
 
